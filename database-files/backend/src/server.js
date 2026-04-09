@@ -27,6 +27,21 @@ app.use(cors({ origin: corsOrigin === '*' ? true : corsOrigin.split(',').map((s)
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan('tiny'));
 
+app.get('/', (req, res) => {
+  return res.json({
+    ok: true,
+    service: 'bondhu-api',
+    endpoints: {
+      health: '/health',
+      ready: '/ready',
+      live: '/live',
+      auth: '/auth',
+      profile: '/profile',
+      resetPasswordPage: '/reset-password',
+    },
+  });
+});
+
 app.get('/live', (req, res) => {
   return res.json({ ok: true, service: 'bondhu-api' });
 });
