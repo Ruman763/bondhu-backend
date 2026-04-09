@@ -31,8 +31,7 @@ services:
     environment:
       NC_DB: "pg://postgres:5432?u=${POSTGRES_USER}&p=${POSTGRES_PASSWORD}&d=${POSTGRES_DB}"
       NC_AUTH_JWT_SECRET: ${NOCODB_JWT_SECRET}
-    ports:
-      - "${NOCODB_PORT}:8080"
+    # No host port: avoids conflict with Coolify/other apps on :8080. Use Coolify domain → container :8080.
     volumes:
       - nocodb_data:/usr/app/data
 
