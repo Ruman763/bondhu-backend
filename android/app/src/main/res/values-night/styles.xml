@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bondhu dark: true black (#000000) for OLED and consistent system bars -->
+    <color name="bondhu_dark_bg">#FF000000</color>
+    <color name="bondhu_dark_surface">#FF0D0D0D</color>
+
+    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is on -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:statusBarColor">@color/bondhu_dark_bg</item>
+        <item name="android:navigationBarColor">@color/bondhu_dark_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+    <!-- Theme applied to the Android Window as soon as the process has started. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/bondhu_dark_bg</item>
+        <item name="android:statusBarColor">@color/bondhu_dark_bg</item>
+        <item name="android:navigationBarColor">@color/bondhu_dark_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+</resources>

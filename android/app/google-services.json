@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "870862996812",
+    "firebase_url": "https://bondhu-a6497-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "bondhu-a6497",
+    "storage_bucket": "bondhu-a6497.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:870862996812:android:439276b7f9268c649abbe9",
+        "android_client_info": {
+          "package_name": "com.bondhu.bondhu_flutter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "870862996812-a8ob7htentubphsu5u5db9k22mh72hp2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bondhu.bondhu_flutter",
+            "certificate_hash": "36ae911e0ca61df1516ecd1337e2e514e96a67f2"
+          }
+        },
+        {
+          "client_id": "870862996812-pjq8ordsbnjtgfau719sep29mmh7qt9i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNc1yEPz_e54GSz4P8VM-PDua46IdGm38"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "870862996812-pjq8ordsbnjtgfau719sep29mmh7qt9i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

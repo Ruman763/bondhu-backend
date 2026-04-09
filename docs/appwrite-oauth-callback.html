@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Redirecting to app…</title>
+  <script>
+    // Appwrite redirects here after Google OAuth. Appwrite SDK expects key & secret in *query*.
+    // Convert fragment (#key=...&secret=...) to query when redirecting to the app.
+    (function () {
+      var scheme = 'appwrite-callback-69cf9be50007dedee8ce';
+      var q = window.location.search;
+      var h = window.location.hash;
+      var path = '//';
+      var query = q || '';
+      if (h && h.indexOf('#') === 0) {
+        var frag = h.slice(1);
+        query = query ? (query.indexOf('?') === 0 ? query + '&' + frag : '?' + query + '&' + frag) : '?' + frag;
+      }
+      if (query.indexOf('?') !== 0 && query.length) query = '?' + query;
+      window.location.replace(scheme + ':' + path + '/' + query);
+    })();
+  </script>
+  <style>
+    body { font-family: system-ui, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    p { color: #666; }
+  </style>
+</head>
+<body>
+  <p>Redirecting to Bondhu app…</p>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network security config.
+  To enable certificate pinning for api.bondhu.site and the chat server:
+  1. Get SPKI SHA-256 pins, e.g.:
+     openssl s_client -servername api.bondhu.site -connect api.bondhu.site:443 &lt;/dev/null 2&gt;/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+  2. Add a <pin-set> with expiration inside <domain-config> for each domain.
+  Leaving no pin-set here so connections work; add pins for production hardening.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
