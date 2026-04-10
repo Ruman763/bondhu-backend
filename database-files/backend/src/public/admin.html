@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bondhu Admin</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 24px; background: #0f172a; color: #e2e8f0; }
+      h1, h2 { margin: 0 0 12px; }
+      .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+      input, button { padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #111827; color: #e2e8f0; }
+      button { background: #2563eb; border: none; cursor: pointer; }
+      button.secondary { background: #475569; }
+      .cards { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 12px; margin: 16px 0 20px; }
+      .card { background: #111827; padding: 16px; border-radius: 10px; border: 1px solid #334155; }
+      .muted { color: #94a3b8; font-size: 12px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+      th, td { padding: 10px; border-bottom: 1px solid #334155; text-align: left; font-size: 14px; }
+      .error { color: #fca5a5; margin-top: 8px; }
+      @media (max-width: 700px) { .cards { grid-template-columns: repeat(2, minmax(140px, 1fr)); } }
+    </style>
+  </head>
+  <body>
+    <h1>Bondhu Admin</h1>
+    <p class="muted">One-place panel for overview, users, and auth session control.</p>
+
+    <div class="row">
+      <input id="adminKey" type="password" placeholder="ADMIN_PANEL_KEY" style="min-width: 320px;" />
+      <button id="connectBtn">Connect</button>
+      <button id="refreshBtn" class="secondary">Refresh</button>
+    </div>
+    <div id="status" class="muted"></div>
+    <div id="error" class="error"></div>
+
+    <div class="cards">
+      <div class="card"><div class="muted">Users</div><h2 id="usersCount">0</h2></div>
+      <div class="card"><div class="muted">Posts</div><h2 id="postsCount">0</h2></div>
+      <div class="card"><div class="muted">Chats</div><h2 id="chatsCount">0</h2></div>
+      <div class="card"><div class="muted">Messages</div><h2 id="messagesCount">0</h2></div>
+    </div>
+
+    <div class="row">
+      <input id="searchInput" placeholder="Search email or name" style="min-width: 320px;" />
+      <button id="loadUsersBtn">Load users</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Name</th>
+          <th>Provider</th>
+          <th>Created</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="usersBody"></tbody>
+    </table>
+
+    <script>
+      let adminKey = '';
+
+      function setError(msg) {
+        document.getElementById('error').textContent = msg || '';
+      }
+
+      async function api(path, options = {}) {
+        const headers = Object.assign({}, options.headers || {}, {
+          'x-admin-key': adminKey,
+          'Content-Type': 'application/json',
+        });
+        const response = await fetch(path, Object.assign({}, options, { headers }));
+        if (!response.ok) {
+          let message = 'Request failed';
+          try {
+            const data = await response.json();
+            message = data.error || message;
+          } catch (_) {}
+          throw new Error(message);
+        }
+        return response.json();
+      }
+
+      async function loadOverview() {
+        const data = await api('/admin/api/overview');
+        document.getElementById('usersCount').textContent = data.users;
+        document.getElementById('postsCount').textContent = data.posts;
+        document.getElementById('chatsCount').textContent = data.chats;
+        document.getElementById('messagesCount').textContent = data.messages;
+      }
+
+      async function loadUsers() {
+        const search = encodeURIComponent(document.getElementById('searchInput').value || '');
+        const data = await api('/admin/api/users?limit=100&search=' + search);
+        const tbody = document.getElementById('usersBody');
+        tbody.innerHTML = '';
+        for (const u of data.users || []) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${u.email || ''}</td>
+            <td>${u.display_name || ''}</td>
+            <td>${u.auth_provider || ''}</td>
+            <td>${u.created_at ? new Date(u.created_at).toLocaleString() : ''}</td>
+            <td><button data-id="${u.id}" class="secondary revoke">Revoke sessions</button></td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        for (const el of document.querySelectorAll('.revoke')) {
+          el.addEventListener('click', async () => {
+            try {
+              setError('');
+              await api('/admin/api/users/' + el.dataset.id + '/revoke-sessions', { method: 'POST' });
+              document.getElementById('status').textContent = 'Sessions revoked.';
+            } catch (err) {
+              setError(err.message);
+            }
+          });
+        }
+      }
+
+      async function connectAndLoad() {
+        adminKey = (document.getElementById('adminKey').value || '').trim();
+        if (!adminKey) {
+          setError('Enter ADMIN_PANEL_KEY first.');
+          return;
+        }
+        try {
+          setError('');
+          document.getElementById('status').textContent = 'Connected.';
+          await loadOverview();
+          await loadUsers();
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+
+      document.getElementById('connectBtn').addEventListener('click', connectAndLoad);
+      document.getElementById('refreshBtn').addEventListener('click', async () => {
+        if (!adminKey) return setError('Connect first.');
+        try {
+          setError('');
+          await loadOverview();
+          await loadUsers();
+        } catch (err) {
+          setError(err.message);
+        }
+      });
+      document.getElementById('loadUsersBtn').addEventListener('click', async () => {
+        if (!adminKey) return setError('Connect first.');
+        try {
+          setError('');
+          await loadUsers();
+        } catch (err) {
+          setError(err.message);
+        }
+      });
+    </script>
+  </body>
+</html>

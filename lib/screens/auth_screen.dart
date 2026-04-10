@@ -166,6 +166,16 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _handleGoogleAuth() async {
     if (_busy) return;
+    if (kIsWeb) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLanguageService.instance.t('google_login_web_hint')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     HapticFeedback.selectionClick();
     setState(() => _busy = true);
     try {
@@ -395,13 +405,11 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ),
           ),
-          if (!kIsWeb) ...[
-            const SizedBox(height: 10),
-            FadeSlideIn(
-              delay: const Duration(milliseconds: 200),
-              child: _googleButton(context, isDark),
-            ),
-          ],
+          const SizedBox(height: 10),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 200),
+            child: _googleButton(context, isDark),
+          ),
           const SizedBox(height: 10),
           FadeSlideIn(
             delay: const Duration(milliseconds: 220),

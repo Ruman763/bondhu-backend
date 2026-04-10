@@ -1,19 +1,25 @@
-/// Same server for both platforms (web + app). Single source: ../bondhu-chat-server-url.txt
-/// Website: bondhu-v2 .env VITE_SOCKET_URL — keep this value in sync.
+/// Legacy Render chat server (only used if API is still localhost and CHAT_SERVER_URL is unset).
 const String kProductionChatServerUrl = 'https://bondhu-chat-server.onrender.com';
 
 /// Local backend port (bondhu-backend). Only used when CHAT_SERVER_URL is set to localhost.
 const int kTestChatServerPort = 3000;
 
-/// Chat server URL. Uses production server by default (debug and release) so chat works without a local server.
-/// To test against a local backend, run with: flutter run --dart-define=CHAT_SERVER_URL=http://localhost:3000
-/// (or http://10.0.2.2:3000 on Android emulator)
+/// Chat / WebRTC signaling (Socket.IO). Prefer the **same host as [kApiBaseUrl]** so one VPS runs REST + realtime.
+/// Override with: `--dart-define=CHAT_SERVER_URL=https://backend.example.com`
+/// Local: `--dart-define=CHAT_SERVER_URL=http://localhost:3000` or `http://10.0.2.2:3000` (Android emulator)
 String get kChatServerUrl {
   const override = String.fromEnvironment(
     'CHAT_SERVER_URL',
     defaultValue: '',
   );
   if (override.isNotEmpty) return override;
+  final api = kApiBaseUrl.trim();
+  if (api.isNotEmpty &&
+      !api.contains('localhost') &&
+      !api.contains('127.0.0.1') &&
+      !api.contains('10.0.2.2')) {
+    return api.endsWith('/') ? api.substring(0, api.length - 1) : api;
+  }
   return kProductionChatServerUrl;
 }
 

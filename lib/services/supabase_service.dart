@@ -235,7 +235,7 @@ class PostDoc {
   static PostDoc fromDoc(Map<String, dynamic> data) {
     return PostDoc(
       docId: data['id']?.toString() ?? '',
-      userId: data['author_id']?.toString() ?? '',
+      userId: data['author_id']?.toString() ?? data['user_id']?.toString() ?? '',
       timestamp: data['created_at']?.toString() ?? '',
       content: data['content']?.toString() ?? '',
       mediaUrl: data['media_url']?.toString(),
@@ -421,6 +421,36 @@ Future<http.Response> _authedPatch(String path, Map<String, dynamic> body) async
 
   Future<http.Response> doReq(String token) {
     return http.patch(
+      _apiUri(path),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    ).timeout(const Duration(seconds: 12));
+  }
+
+  try {
+    var response = await doReq(accessToken);
+    if (response.statusCode == 401) {
+      final refreshed = await _refreshAccessTokenOrThrow();
+      final newToken = refreshed['accessToken']?.toString() ?? '';
+      if (newToken.isNotEmpty) {
+        response = await doReq(newToken);
+      }
+    }
+    return response;
+  } on TimeoutException {
+    throw Exception(_apiTimeoutError);
+  }
+}
+
+Future<http.Response> _authedPost(String path, Map<String, dynamic> body) async {
+  final accessToken = await _getAccessToken();
+  if (accessToken == null) throw Exception('Session expired. Please log in again.');
+
+  Future<http.Response> doReq(String token) {
+    return http.post(
       _apiUri(path),
       headers: {
         'Content-Type': 'application/json',
@@ -781,6 +811,7 @@ Future<ProfileDoc?> syncProfile(AuthUser user) async {
         'avatar': me['avatar_url']?.toString() ?? user.avatar ?? defaultAvatar(email),
         'bio': me['bio']?.toString(),
         'location': me['location']?.toString(),
+        'public_key': me['public_key']?.toString(),
         'followers': user.followers,
         'following': user.following,
         'contact_list': const <String>[],
@@ -912,13 +943,47 @@ Future<List<ProfileDoc>> searchProfiles(String queryText) async {
 
 Future<List<ProfileDoc>> getProfilesByIds(List<String> userIds) async {
   if (userIds.isEmpty) return [];
+  final normalized = userIds.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  if (normalized.isEmpty) return [];
+
   try {
-    final normalized = userIds.map((e) => e.trim().toLowerCase()).toSet();
+    final response = await _authedPost('/profile/lookup', {'identifiers': normalized});
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final payload = jsonDecode(response.body) as Map<String, dynamic>;
+      final list = payload['profiles'] as List<dynamic>? ?? [];
+      final profiles = await _readProfilesStore();
+      for (final item in list) {
+        if (item is! Map) continue;
+        final row = Map<String, dynamic>.from(item);
+        final key = (row['user_id']?.toString() ?? '').trim().toLowerCase();
+        if (key.isNotEmpty) profiles[key] = row;
+      }
+      await _writeProfilesStore(profiles);
+    }
+  } catch (e) {
+    debugPrint('getProfilesByIds API: $e');
+  }
+
+  try {
     final profiles = await _readProfilesStore();
-    return profiles.entries
-        .where((e) => normalized.contains(e.key))
-        .map((e) => ProfileDoc.fromDoc(e.value))
-        .toList();
+    final wanted = normalized.map((e) => e.toLowerCase()).toList();
+    final out = <ProfileDoc>[];
+    for (final raw in wanted) {
+      ProfileDoc? found;
+      if (profiles.containsKey(raw)) {
+        found = ProfileDoc.fromDoc(profiles[raw]!);
+      } else {
+        for (final entry in profiles.entries) {
+          final docId = (entry.value['id']?.toString() ?? '').toLowerCase();
+          if (docId == raw) {
+            found = ProfileDoc.fromDoc(entry.value);
+            break;
+          }
+        }
+      }
+      if (found != null) out.add(found);
+    }
+    return out;
   } catch (_) {
     return [];
   }
@@ -975,6 +1040,21 @@ Future<PostDoc> createPost({
   String mediaUrl = '',
   String type = 'text',
 }) async {
+  try {
+    final body = <String, dynamic>{
+      'content': content,
+      'postType': type,
+    };
+    if (mediaUrl.isNotEmpty) body['mediaUrl'] = mediaUrl;
+    final response = await _authedPost('/posts', body);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final payload = jsonDecode(response.body) as Map<String, dynamic>;
+      final post = payload['post'] as Map<String, dynamic>?;
+      if (post != null) return PostDoc.fromDoc(post);
+    }
+  } catch (e) {
+    debugPrint('createPost: $e');
+  }
   final now = DateTime.now();
   return PostDoc(
     docId: 'post_${now.microsecondsSinceEpoch}',
@@ -990,7 +1070,19 @@ Future<PostDoc> createPost({
 }
 
 Future<List<dynamic>> getPosts({int limit = 50, int offset = 0}) async {
-  // Returning dynamic list as stub
+  try {
+    final response = await _authedGet('/posts?limit=$limit&offset=$offset');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final payload = jsonDecode(response.body) as Map<String, dynamic>;
+      final posts = payload['posts'] as List<dynamic>? ?? [];
+      return posts.map((raw) {
+        final m = raw is Map<String, dynamic> ? raw : Map<String, dynamic>.from(raw as Map);
+        return PostDoc.fromDoc(m);
+      }).toList();
+    }
+  } catch (e) {
+    debugPrint('getPosts: $e');
+  }
   return [];
 }
 

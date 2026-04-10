@@ -190,6 +190,8 @@ const Map<String, String> _en = {
   'something_went_wrong': 'Something went wrong.',
   'facebook_login_soon': 'Facebook login coming soon',
   'google_login_soon': 'Google login coming soon',
+  'google_login_web_hint':
+      'Google sign-in works in the Android and iOS apps. On web, use email and password.',
   'google_login_redirect_hint': 'Google login failed. Add bondhu.site in Supabase Authentication URL configuration (Site URL and Redirect URLs) and verify Google provider settings.',
   'continue_demo': 'Continue as demo (no sign up)',
   'continue_google': 'Continue with Google',
@@ -676,6 +678,8 @@ const Map<String, String> _bn = {
   'something_went_wrong': 'কিছু ভুল হয়েছে।',
   'facebook_login_soon': 'ফেসবুক লগইন শীঘ্রই আসছে',
   'google_login_soon': 'গুগল লগইন শীঘ্রই আসছে',
+  'google_login_web_hint':
+      'অ্যান্ড্রয়েড ও iOS অ্যাপে গুগল সাইন-ইন কাজ করে। ওয়েবে ইমেইল ও পাসওয়ার্ড ব্যবহার করুন।',
   'google_login_redirect_hint': 'গুগল লগইন ব্যর্থ। Supabase Authentication সেটিংসে bondhu.site (Site URL এবং Redirect URLs) যোগ করুন এবং Google provider কনফিগারেশন যাচাই করুন।',
   'continue_demo': 'ডেমো হিসাবে চালিয়ে যান (সাইন আপ ছাড়া)',
   'continue_google': 'গুগল দিয়ে চালিয়ে যান',

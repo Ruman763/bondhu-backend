@@ -5,6 +5,10 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
+const lookupSchema = z.object({
+  identifiers: z.array(z.string().min(1)).max(100),
+});
+
 const updateProfileSchema = z.object({
   displayName: z.string().min(1).max(120).optional(),
   avatarUrl: z.string().url().optional().nullable(),
@@ -14,11 +18,49 @@ const updateProfileSchema = z.object({
   darkMode: z.boolean().optional(),
 });
 
+router.post('/lookup', requireAuth, async (req, res) => {
+  const parsed = lookupSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.flatten() });
+  }
+  const ids = parsed.data.identifiers.map((s) => s.trim()).filter(Boolean);
+  if (ids.length === 0) {
+    return res.json({ profiles: [] });
+  }
+  try {
+    const result = await db.query(
+      `SELECT u.id, u.email, p.display_name, p.avatar_url, p.bio, p.location, p.public_key
+       FROM users u
+       LEFT JOIN profiles p ON p.user_id = u.id
+       WHERE u.id::text = ANY($1::text[])
+          OR lower(u.email) IN (SELECT lower(trim(x)) FROM unnest($1::text[]) AS x)`,
+      [ids]
+    );
+    const profiles = result.rows.map((row) => ({
+      id: row.id,
+      user_id: row.email,
+      name: row.display_name || row.email.split('@')[0],
+      avatar: row.avatar_url || '',
+      bio: row.bio || '',
+      location: row.location,
+      public_key: row.public_key,
+      contact_list: [],
+      followers: [],
+      following: [],
+      created_at: Date.now(),
+    }));
+    return res.json({ profiles });
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to lookup profiles' });
+  }
+});
+
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const result = await db.query(
       `SELECT u.id, u.email, p.display_name, p.avatar_url, p.bio, p.location,
-              p.language_code, p.dark_mode, p.created_at, p.updated_at
+              p.language_code, p.dark_mode, p.public_key,
+              p.created_at, p.updated_at
        FROM users u
        LEFT JOIN profiles p ON p.user_id = u.id
        WHERE u.id = $1`,
